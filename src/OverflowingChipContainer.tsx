@@ -26,25 +26,22 @@ const OverflowChips = () => {
   const containerRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
-    console.log("effect");
-    const countHidden = () => {
-      console.log("count");
-      if (containerRef.current) {
-        const container = containerRef.current;
-        const chips = container.children;
-        let count = 0;
-
-        for (const chip of chips) {
-          if (chip.offsetTop > container.offsetTop) {
-            count++;
-          }
+    const element = containerRef.current;
+    if (!element) return;
+    const observer = new ResizeObserver((elements) => {
+      const container = elements[0];
+      const children = container.target.children;
+      let hiddenCount = 0;
+      Array.from(children).forEach((child) => {
+        //@ts-expect-error child has offsetTop
+        if (child.offsetTop > 0) {
+          hiddenCount++;
         }
-        setHiddenCount(count);
-      }
-    };
-    countHidden();
-    window.addEventListener("resize", countHidden);
-    return () => window.removeEventListener("resize", countHidden);
+      });
+      setHiddenCount(hiddenCount);
+    });
+    observer.observe(element);
+    return () => observer.disconnect();
   }, []);
 
   return (
@@ -65,16 +62,17 @@ const OverflowChips = () => {
           {chipsData.map((label, index) => (
             <Chip key={index} label={label} />
           ))}
-          <Button
-            variant="outlined"
-            size="small"
-            onClick={() => setExpanded(false)}
-          >
-            Show Less
-          </Button>
+          {expanded && (
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={() => setExpanded(false)}
+            >
+              Show Less
+            </Button>
+          )}
         </Box>
       </Box>
-      {/* Expand Button */}
       {hiddenCount > 0 && !expanded && (
         <Button
           variant="contained"
